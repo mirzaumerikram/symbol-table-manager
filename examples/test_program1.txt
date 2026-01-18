@@ -1,0 +1,27 @@
+// Test Program 1: Basic Variable Declarations and Scopes
+// This program demonstrates basic symbol table functionality
+
+// Global variables
+int x = 10;
+float pi = 3.14159;
+string message = "Hello, Compiler!";
+bool flag = true;
+
+// Nested scope example
+{
+    int local_x = 20;
+    float local_y = 2.5;
+    
+    // Update global variable
+    x = 15;
+    
+    // Nested scope
+    {
+        int inner_var = 100;
+        string inner_msg = "Inner scope";
+    }
+}
+
+// More global variables
+int y = 25;
+int z;  // Uninitialized variable

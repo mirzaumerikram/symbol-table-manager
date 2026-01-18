@@ -1,0 +1,28 @@
+// Test Program 2: Error Detection
+// This program contains intentional errors to test error handling
+
+// Valid declarations
+int a = 5;
+float b = 2.5;
+
+// Duplicate declaration error
+int a = 10;  // ERROR: 'a' already declared
+
+// Undeclared variable usage
+c = 15;  // ERROR: 'c' not declared
+
+// Valid scope
+{
+    int local_a = 100;  // OK: different scope
+    string name = "Test";
+    
+    // Update outer variable
+    b = 3.5;  // OK: 'b' exists in parent scope
+}
+
+// Another undeclared variable
+result = a + b;  // ERROR: 'result' not declared
+
+// Valid declaration
+int result = 0;
+result = a + b;  // OK: now 'result' is declared

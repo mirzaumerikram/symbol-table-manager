@@ -1,0 +1,57 @@
+// Test Program 3: Complex Scopes and Multiple Levels
+// Demonstrates deep nesting and scope hierarchy
+
+// Global scope
+int global_counter = 0;
+string app_name = "Mini Compiler";
+float version = 1.0;
+
+// First level scope
+{
+    int level1_var = 10;
+    string level1_name = "Level 1";
+    
+    // Access global
+    global_counter = 1;
+    
+    // Second level scope
+    {
+        int level2_var = 20;
+        float level2_value = 5.5;
+        
+        // Access parent scopes
+        level1_var = 15;
+        global_counter = 2;
+        
+        // Third level scope
+        {
+            int level3_var = 30;
+            bool level3_flag = true;
+            
+            // Access all parent scopes
+            level2_var = 25;
+            level1_var = 20;
+            global_counter = 3;
+        }
+        
+        // Back to level 2
+        level2_var = 22;
+    }
+    
+    // Back to level 1
+    level1_var = 12;
+}
+
+// Another top-level scope
+{
+    int another_var = 100;
+    string another_name = "Another Scope";
+    
+    // Can access global
+    global_counter = 4;
+    version = 2.0;
+}
+
+// Final global variables
+int final_count = 999;
+bool completed = true;
