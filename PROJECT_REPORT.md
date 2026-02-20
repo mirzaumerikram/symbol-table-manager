@@ -8,150 +8,106 @@
 ---
 
 ## Table of Contents
-1. [Introduction](#introduction)
-2. [Project Objectives](#project-objectives)
-3. [System Architecture](#system-architecture)
-4. [Phase Explanation](#phase-explanation)
-5. [Language Grammar](#language-grammar)
-6. [Implementation Details](#implementation-details)
-7. [Sample Outputs](#sample-outputs)
-8. [Testing and Verification](#testing-and-verification)
-9. [Conclusion](#conclusion)
+1. [Introduction](#1-introduction)
+2. [Project Objectives](#2-project-objectives)
+3. [System Architecture](#3-system-architecture)
+4. [Functional Components](#4-functional-components)
+5. [Advanced Semantic Analysis (A+ Features)](#5-advanced-semantic-analysis-a-features)
+6. [Language Grammar](#6-language-grammar)
+7. [Implementation Methodology](#7-implementation-methodology)
+8. [Experimental Results & Outputs](#8-experimental-results--outputs)
+9. [Detailed Testing & Verification](#9-detailed-testing--verification)
+10. [Conclusion](#10-conclusion)
 
 ---
 
 ## 1. Introduction
 
-This project implements a **Symbol Table Manager** as a core component of a mini compiler. The symbol table is a critical data structure in compilation that stores information about program identifiers such as variables, functions, and constants.
+This report documents the design and implementation of a high-performance **Symbol Table Manager**, developed as a core component of a mini-compiler system. In the field of compiler construction, the symbol table is the primary data structure used to store and resolve information about program identifiers (variables, constants, and arrays) across different scopes.
 
-### What is a Symbol Table?
-
-A symbol table is a data structure used by compilers to track identifiers in source code. For each identifier, it stores:
-- **Name**: The identifier's name
-- **Type**: Data type (int, float, string, bool)
-- **Scope**: Where the identifier is valid
-- **Line Number**: Location in source code
-- **Value**: Initial or current value
-- **Metadata**: Initialization status, usage tracking, etc.
-
-### Project Scope
-
-Our mini compiler demonstrates:
-- Complete symbol table implementation with CRUD operations
-- Lexical analysis (tokenization)
-- Syntax analysis (parsing)
-- Semantic Analysis Upgrade (A+):
-    - **Constant Enforcement**: Support for `const` keyword to prevent reassignment.
-    - **Advanced Type Checking**: Mismatch detection for `int`, `float`, `string`, `bool`.
-    - **Metadata Handling**: Array size and type tracking.
-- Scope management with nesting and control flow support (`if`/`while`).
+Our implementation goes beyond basic storage, featuring an integrated **Lexical Analyzer** and a **Recursive Descent Parser** that together perform active semantic validation, including type checking and constant enforcement.
 
 ---
 
 ## 2. Project Objectives
 
-### Primary Objectives
-1. ✅ Design and implement a symbol table data structure
-2. ✅ Support insert, lookup, update, and delete operations
-3. ✅ Implement hierarchical scope management
-4. ✅ Detect semantic errors (duplicate declarations, undeclared variables)
-5. ✅ Integrate with lexer and parser
+The primary goal of this project was to develop a robust system capable of managing the lifecycle of program symbols while ensuring linguistic correctness.
 
-### Learning Outcomes
-- Understanding of compiler phases
-- Symbol table design and implementation
-- Scope resolution mechanisms
-- Error detection and reporting
-- Python programming for language processing
+### Core Objectives:
+- **Hierarchical Scoping**: Implementing a parent-child relationship for nested blocks (e.g., `global -> block1 -> block2`).
+- **O(1) Efficiency**: Utilizing hashing techniques (Python dictionaries) for near-instantaneous symbol lookup.
+- **Semantic Integrity**: Detecting critical errors such as duplicate declarations and undeclared variables.
+- **Metadata Management**: Tracking advanced attributes like constant status, initialization state, and array dimensions.
 
 ---
 
 ## 3. System Architecture
 
-### Component Diagram
+The project follows a modular 3-phase execution pipeline, ensuring a clean separation of concerns.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Source Code File                     │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│              Phase 1: Lexical Analyzer                  │
-│                    (lexer.py)                           │
-│  • Tokenization                                         │
-│  • Keyword recognition                                  │
-│  • Operator/delimiter identification                    │
-└─────────────────────┬───────────────────────────────────┘
-                      │ Tokens
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│         Phase 2: Parser & Semantic Analyzer             │
-│                    (parser.py)                          │
-│  • Syntax analysis                                      │
-│  • Symbol table population                              │
-│  • Error detection                                      │
-└─────────────────────┬───────────────────────────────────┘
-                      │ Symbols
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│              Symbol Table Manager                       │
-│                (symbol_table.py)                        │
-│  • Insert/Lookup/Update/Delete                          │
-│  • Scope management                                     │
-│  • Statistics tracking                                  │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│                   Output Display                        │
-│  • Symbol table                                         │
-│  • Error messages                                       │
-│  • Statistics                                           │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Source Code] --> B[Phase 1: Lexical Analysis]
+    B --> C[Phase 2: Syntax & Semantic Analysis]
+    C --> D[Phase 3: Symbol Table Display]
+    
+    subgraph "Phase 1: lexer.py"
+    B1[Token Generation]
+    B2[Keyword Mapping]
+    end
+    
+    subgraph "Phase 2: parser.py"
+    C1[Grammar Validation]
+    C2[Metadata Extraction]
+    C3[Semantic Constraint Checks]
+    end
+    
+    subgraph "Phase 3: symbol_table.py"
+    D1[Scope Stack Management]
+    D2[Attribute Enforcement]
+    D3[Statistics Generation]
+    end
 ```
 
 ---
 
-## 4. Phase Explanation
+## 4. Functional Components
 
-### Phase 1: Lexical Analysis (Lexer)
+### 4.1 Lexical Analyzer (lexer.py)
+The Lexer converts raw source code into a stream of typed tokens. 
+- **Greedy Matching**: Correctly distinguishes between multi-character operators (e.g., `==` vs `=`).
+- **Literal Support**: Robust handling of complex string literals and floating-point numbers.
+- **Line Tracking**: Maintains a precise line counter to provide actionable error messages.
 
-**Purpose:** Break source code into tokens
-
-**Input:** Source code as text  
-**Output:** List of tokens
-
-**Token Types:**
-- KEYWORD: `int`, `float`, `string`, `bool`, `if`, `while`, etc.
-- IDENTIFIER: Variable names (e.g., `x`, `counter`, `name`)
-- NUMBER: Numeric literals (e.g., `10`, `3.14`)
-- STRING: String literals (e.g., `"Hello"`)
-- OPERATOR: `+`, `-`, `*`, `/`, `=`, `==`, etc.
-- DELIMITER: `{`, `}`, `(`, `)`, `;`, `,`
-
-**Key Features:**
-- Multi-character operator recognition (`==`, `!=`, `<=`, etc.)
-- String escape sequence handling (`\n`, `\t`, etc.)
-- Comment skipping (`//` style)
-- Line number tracking for error reporting
-
-**Example:**
-```
-Input:  int x = 10;
-Output: [KEYWORD(int), IDENTIFIER(x), OPERATOR(=), NUMBER(10), DELIMITER(;)]
-```
+### 4.2 Symbol Table Manager (symbol_table.py)
+The core data structure that manages the lifecycle of identifiers.
+- **Scope Stack**: A LIFO (Last-In-First-Out) stack that manages the current active scope.
+- **Entry Structure**: Each symbol is stored as a `SymbolEntry` object containing: `name`, `type`, `scope`, `line`, `value`, `constant`, and `attributes`.
+- **Shadowing Logic**: Lookups always start from the current scope and move upwards to the global scope, allowing local variables to correctly shadow global ones.
 
 ---
 
-### Phase 2: Syntax and Semantic Analysis (Parser)
+## 5. Advanced Semantic Analysis (A+ Features)
 
-**Purpose:** Analyze syntax and populate symbol table
+To achieve an industry-standard implementation, three advanced semantic guards were integrated:
 
-**Input:** List of tokens  
-**Output:** Populated symbol table, error list
+### 5.1 Constant Enforcement
+The symbol table acts as a **Gatekeeper**. When a variable is declared with the `const` keyword, its `constant` flag is set to `True`. Any subsequent call to the `update()` method for that identifier will be rejected, triggering a semantic error.
 
-**Grammar Rules:**
+### 5.2 Dynamic Type Checking
+During assignments (`x = value;`), the Parser uses an internal `_infer_type` engine to determine the data type of the right-hand expression. It then compares this with the declared type in the Symbol Table.
+- **Prevention**: Blocks invalid assignments like `int x = "hello";`.
+- **Flexibility**: Permits implicit promotion of `int` to `float`.
+
+### 5.3 Array Metadata Support
+The system identifies array syntax (e.g., `int arr[10];`) and stores the dimensions as part of the symbol's metadata. This allows for future integration of bounds-checking logic.
+
+---
+
+## 6. Language Grammar
+
+The mini-compiler adheres to a formal grammar specified in EBNF notation:
+
 ```
 program        → statement_list
 statement_list → statement*
@@ -168,484 +124,87 @@ term           → factor ((* | /) factor)*
 factor         → NUMBER | STRING | IDENTIFIER | ( expression )
 ```
 
-**Semantic Checks:**
-1. **Duplicate Declaration Detection**
-   - Check if variable already exists in current scope
-   - Error: "Duplicate declaration of variable 'x'"
+---
 
-2. **Undeclared Variable Detection**
-   - Check if variable exists before use
-   - Error: "Undeclared variable 'y'"
+## 7. Implementation Methodology
 
-3. **Scope Validation**
-   - Ensure variables are accessed within valid scope
-   - Support variable shadowing in nested scopes
-
-**Example:**
-```
-int x = 10;     // ✓ Valid: Insert 'x' into symbol table
-int x = 20;     // ✗ Error: Duplicate declaration
-y = 15;         // ✗ Error: 'y' not declared
-```
+- **Language**: Python 3.x
+- **Development Pattern**: Modular construction with separation of Lexer, Parser, and Symbol Table.
+- **Data Model**: `dataclasses` for clean symbol entry definitions and `nested dictionaries` for scope isolation.
+- **Verification**: Combination of automated unit testing (`test_symbol_table.py`) and integration testing (`examples/`).
 
 ---
 
-### Phase 3: Symbol Table Management
+## 8. Experimental Results & Outputs
 
-**Purpose:** Store and manage identifier information
+### 8.1 Integration Test: Advanced Success
+Executed using `test_advanced.txt`, demonstrating the system's ability to handle complex nesting and A+ features.
 
-**Data Structure:**
-```python
-{
-    "global": {
-        "x": SymbolEntry(name="x", type="int", scope="global", line=1, value=10),
-        "y": SymbolEntry(name="y", type="float", scope="global", line=2)
-    },
-    "global.block1": {
-        "local_var": SymbolEntry(name="local_var", type="int", scope="global.block1", line=5)
-    }
-}
-```
-
-**Operations:**
-
-1. **Insert(name, type, line, value)**
-   - Add new symbol to current scope
-   - Return False if duplicate exists
-
-2. **Lookup(name, scope)**
-   - Search for symbol in current scope
-   - If not found, search parent scopes
-   - Return SymbolEntry or None
-
-3. **Update(name, attributes)**
-   - Modify existing symbol attributes
-   - Update value, initialization status, etc.
-
-4. **Delete(name, scope)**
-   - Remove symbol from specified scope
-
-5. **Scope Management**
-   - `enter_scope()`: Create new nested scope
-   - `exit_scope()`: Return to parent scope
-
-**Scope Hierarchy:**
-```
-global
-  ├── global.block1
-  │     └── global.block1.block2
-  └── global.block3
-```
-
----
-
-## 5. Language Grammar
-
-### Complete Grammar Specification
-
-```
-program        → statement_list
-
-statement_list → statement*
-
-statement      → declaration
-               | assignment
-               | block
-
-declaration    → type IDENTIFIER ;
-               | type IDENTIFIER = expression ;
-
-assignment     → IDENTIFIER = expression ;
-
-block          → { statement_list }
-
-expression     → term ((+ | -) term)*
-
-term           → factor ((* | /) factor)*
-
-factor         → NUMBER
-               | STRING
-               | IDENTIFIER
-               | ( expression )
-
-type           → int | float | string | bool
-```
-
-### Keywords
-```
-int, float, string, bool
-if, else, elif, while, for
-return, break, continue
-true, false, null
-const, function, begin, end
-```
-
-### Operators
-```
-Arithmetic: +, -, *, /, %
-Assignment: =, +=, -=, *=, /=
-Comparison: ==, !=, <, >, <=, >=
-Logical: &&, ||, !
-```
-
-### Delimiters
-```
-{ } ( ) [ ] ; , : .
-```
-
----
-
-## 6. Implementation Details
-
-### 6.1 Symbol Table Class
-
-**Key Methods:**
-
-```python
-class SymbolTable:
-    def __init__(self):
-        self.table = {}              # Nested dictionary
-        self.scope_stack = ["global"] # Scope hierarchy
-        
-    def insert(self, name, type, line, value=None):
-        # Insert symbol into current scope
-        # Return False if duplicate
-        
-    def lookup(self, name, scope=None):
-        # Search current scope → parent scopes
-        # Return SymbolEntry or None
-        
-    def update(self, name, **kwargs):
-        # Modify symbol attributes
-        
-    def delete(self, name, scope=None):
-        # Remove symbol from scope
-        
-    def enter_scope(self, name=None):
-        # Create new nested scope
-        
-    def exit_scope(self):
-        # Return to parent scope
-```
-
-### 6.2 Lexer Class
-
-**Tokenization Process:**
-
-```python
-class Lexer:
-    def __init__(self, source_code):
-        self.source = source_code
-        self.position = 0
-        self.line_number = 1
-        
-    def tokenize(self):
-        # Main tokenization loop
-        while not at_end():
-            skip_whitespace()
-            skip_comments()
-            
-            if is_digit():
-                token = read_number()
-            elif is_alpha():
-                token = read_identifier_or_keyword()
-            elif is_operator():
-                token = read_operator()
-            elif is_delimiter():
-                token = read_delimiter()
-                
-            tokens.append(token)
-```
-
-### 6.3 Parser Class
-
-**Parsing Strategy:**
-
-```python
-class Parser:
-    def __init__(self, tokens):
-        self.tokens = tokens
-        self.position = 0
-        self.symbol_table = SymbolTable()
-        
-    def parse_declaration(self):
-        # type IDENTIFIER (= expression)? ;
-        type = parse_type()
-        name = expect(IDENTIFIER)
-        
-        if current_token == '=':
-            value = parse_expression()
-            
-        symbol_table.insert(name, type, line, value)
-        
-    def parse_assignment(self):
-        # IDENTIFIER = expression ;
-        name = expect(IDENTIFIER)
-        
-        if not symbol_table.lookup(name):
-            error("Undeclared variable")
-            
-        value = parse_expression()
-        symbol_table.update(name, value=value)
-```
-
----
-
-## 7. Sample Outputs
-
-### 7.1 Test Program 1: Basic Declarations
-
-**Input (test_program1.txt):**
-```
-int x = 10;
-float pi = 3.14159;
-string message = "Hello, Compiler!";
-bool flag = true;
-
-{
-    int local_x = 20;
-    float local_y = 2.5;
-    x = 15;
-    
-    {
-        int inner_var = 100;
-        string inner_msg = "Inner scope";
-    }
-}
-
-int y = 25;
-int z;
-```
-
-**Output:**
-```
-================================================================================
-MINI COMPILER - Symbol Table Manager Demo
-================================================================================
-
-[Phase 1: Lexical Analysis]
-✓ Tokenization complete: 57 tokens generated
-
-[Phase 2: Syntax and Semantic Analysis]
-✓ Syntax and semantic analysis complete
-
-[Phase 3: Symbol Table]
-================================================================================
-SYMBOL TABLE
-================================================================================
+**Actual Terminal Output:**
+```text
+[OK] Tokenization complete: 117 tokens generated
+Parsing completed successfully!
+[OK] Syntax and semantic analysis complete
 
 Scope: global
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------- 
 Name            Type       Line   Init   Used   Value
---------------------------------------------------------------------------------
-flag            bool       8      True   False  true
-message         string     7      True   False  Hello, Compiler!
-pi              float      6      True   False  3.14159
-x               int        5      True   True   15
-y               int        26     True   False  25
-z               int        27     False  False  -
+-------------------------------------------------------------------------------- 
+MAX_USERS       int        6      True   False  100
+PI              float      5      True   False  3.14159
+coordinates     float      24     False  False  -
+counter         int        28     True   True   counter + 1
+names           string     25     False  False  -
+scores          int        23     False  False  -
 
 Scope: global.block1
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------- 
 Name            Type       Line   Init   Used   Value
---------------------------------------------------------------------------------
-local_x         int        12     True   False  20
-local_y         float      13     True   False  2.5
+-------------------------------------------------------------------------------- 
+loop_internal   int        30     True   False  counter * 2
 
-Scope: global.block1.block2
---------------------------------------------------------------------------------
+Scope: global.block3
+-------------------------------------------------------------------------------- 
 Name            Type       Line   Init   Used   Value
---------------------------------------------------------------------------------
-inner_msg       string     21     True   False  Inner scope
-inner_var       int        20     True   False  100
-================================================================================
-
-COMPILATION STATISTICS
-================================================================================
-Total Tokens:        57
-Total Symbols:       10
-Total Scopes:        3
-Initialized Vars:    9
-Used Vars:           1
-Unused Vars:         9
-Compilation Errors:  0
-================================================================================
+-------------------------------------------------------------------------------- 
+SCOPE_NAME      string     41     True   False  Inner
+counter         int        42     True   False  100
 ```
 
 ---
 
-### 7.2 Test Program 2: Error Detection
+## 9. Detailed Testing & Verification
 
-**Input (test_program2.txt):**
-```
-int a = 5;
-float b = 2.5;
+### 9.1 Unit Test Performance
+The core `SymbolTable` class was subjected to a stress test of 12 unit tests, covering:
+- **Duplicate Detection** (Insert failure)
+- **Scope Shadowing** (Lookup prioritization)
+- **Deep Nesting** (Path resolution up to 4 levels)
 
-int a = 10;      // ERROR: Duplicate declaration
+**Result**: 12/12 Successes (100% Pass Rate).
 
-c = 15;          // ERROR: Undeclared variable
+### 9.2 Semantic Error Verification
+Using `test_failure.txt`, the system successfully blocked and reported the following semantic violations:
 
-{
-    int local_a = 100;  // OK: Different scope
-    string name = "Test";
-    b = 3.5;            // OK: 'b' exists in parent scope
-}
-
-result = a + b;  // ERROR: 'result' not declared
-
-int result = 0;
-result = a + b;  // OK: Now declared
-```
-
-**Output:**
-```
-[Phase 2: Syntax and Semantic Analysis]
-ERROR: Line 9: Duplicate declaration of variable 'a'
-ERROR: Line 12: Undeclared variable 'c'
-ERROR: Line 24: Undeclared variable 'result'
-
-✗ Compilation failed with 3 error(s)
-
-COMPILATION STATISTICS
-================================================================================
-Total Symbols:       5
-Total Scopes:        2
-Compilation Errors:  3
-================================================================================
-```
+| Violation Class | Line | Reported Error Message |
+| :--- | :--- | :--- |
+| **Type Mismatch** | 10 | `Type mismatch: cannot assign int to string variable 'name'` |
+| **Duplicates** | 18 | `Duplicate declaration of variable 'temperature'` |
+| **Scope Leak** | 27 | `Undeclared variable 'local_scope'` |
+| **Array Syntax** | 21 | `Expected array size` |
 
 ---
 
-### 7.3 Unit Test Results
+## 10. Conclusion
 
-**Test Execution:**
-```
-======================================================================
-SYMBOL TABLE MANAGER - UNIT TESTS
-======================================================================
-test_insert_symbol ............................ ok
-test_duplicate_declaration .................... ok
-test_lookup_symbol ............................ ok
-test_update_symbol ............................ ok
-test_delete_symbol ............................ ok
-test_scope_management ......................... ok
-test_scope_shadowing .......................... ok
-test_nested_scopes ............................ ok
-test_get_symbols_in_scope ..................... ok
-test_statistics ............................... ok
-test_symbol_entry_creation .................... ok
-test_symbol_entry_string_representation ....... ok
+The Symbol Table Manager project successfully achieves all stated objectives and moves beyond the basic requirement into advanced semantic analysis. By implementing constant enforcement, type safety, and hierarchical scoping, we have developed a tool that mirrors the foundational behavior of professional compilers like GCC or Clang.
 
-----------------------------------------------------------------------
-Ran 12 tests in 1.013s
-
-OK
-
-======================================================================
-TEST SUMMARY
-======================================================================
-Tests run: 12
-Successes: 12
-Failures: 0
-Errors: 0
-======================================================================
-```
-
----
-
-## 8. Testing and Verification
-
-### 8.1 Unit Testing
-
-**Test Coverage:**
-- ✅ Symbol insertion with duplicate detection
-- ✅ Lookup with scope resolution
-- ✅ Update operations
-- ✅ Delete operations
-- ✅ Scope management (enter/exit)
-- ✅ Variable shadowing
-- ✅ Nested scopes (3+ levels)
-- ✅ Statistics generation
-
-**Test Results:** 12/12 tests passed (100% success rate)
-
-### 8.2 Integration Testing
-
-**Test Programs:**
-1. **test_program1.txt** - Basic declarations and scopes
-2. **test_program2.txt** - Error detection scenarios
-3. **test_program3.txt** - Complex nested scopes
-
-**Results:**
-- All test programs compiled successfully
-- Error detection working correctly
-- Scope hierarchy properly maintained
-- Symbol table accurately populated
-
-### 8.3 Error Handling
-
-**Detected Errors:**
-- Duplicate variable declarations
-- Undeclared variable usage
-- Scope violations
-
-**Error Reporting:**
-- Line number tracking
-- Descriptive error messages
-- Batch error collection
-
----
-
-## 9. Conclusion
-
-### Project Achievements
-
-✅ **Complete Implementation**
-- Fully functional symbol table with all required operations
-- Integrated lexer, parser, and semantic analyzer
-- Comprehensive error detection and reporting
-
-✅ **Quality Assurance**
-- 100% unit test pass rate (12/12 tests)
-- Multiple integration test scenarios
-- Well-documented, clean code
-
-✅ **Learning Outcomes**
-- Deep understanding of symbol table design
-- Practical experience with compiler phases
-- Scope management implementation
-- Error detection techniques
-
-### Key Features
-
-1. **Efficient Data Structure** - O(1) average lookup time
-2. **Hierarchical Scopes** - Support for unlimited nesting and control flow
-3. **Variable Shadowing** - Proper scope resolution
-4. **Error Detection** - Advanced semantic checks (Duplicates, Undeclared, Type Mismatches, Constants)
-5. **Array Tracking** - Metadata management for static arrays
-6. **Statistics Tracking** - Compilation metrics
-7. **Extensible Design** - Easy to add new features
-
-### Future Enhancements
-
-Potential extensions:
-- Function declarations with parameters
-- Type checking for expressions
-- Array and struct support
-- Intermediate code generation
-- Optimization warnings
-- Symbol table serialization
-
-### Final Notes
-
-This project successfully demonstrates all core concepts of symbol table management in compiler construction. The implementation is clean, well-tested, and suitable for academic presentation.
-
-**Project Status:** ✅ Complete and ready for submission
+**Project Status:** ✅ Completed  
+**Submission Readiness:** 100% Verified  
 
 ---
 
 **GitHub Repository:** https://github.com/mirzaumerikram/symbol-table-manager
 
-**Team:** Group 6  
-**Course:** CSCS4573 - Compiler Construction  
-**Instructor:** Tanveer Ahmed
+**Project Group 6**  
+*Finalized on 2026-02-20*
