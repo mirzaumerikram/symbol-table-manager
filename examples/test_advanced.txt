@@ -1,0 +1,46 @@
+// Test Program: Advanced Features (A+ Upgrade)
+// This program tests constants, type checking, arrays, and control flow scopes
+
+// 1. Constant Enforcement
+const float PI = 3.14159;
+const int MAX_USERS = 100;
+
+// This should fail (uncomment to test error)
+// PI = 3.14; 
+
+// 2. Semantic Type Checking
+int valid_int = 10;
+float valid_float = 20.5;
+string valid_string = "Hello";
+bool valid_bool = true;
+
+// Type Mismatches (These should trigger errors)
+// int error_int = "string";
+// bool error_bool = 10;
+// string error_string = 3.14;
+
+// 3. Array Support
+int scores[5];
+float coordinates[3];
+string names[10];
+
+// 4. Control Flow Scopes
+int counter = 0;
+while (counter < 5) {
+    int loop_internal = counter * 2;
+    counter = counter + 1;
+}
+
+if (counter == 5) {
+    string status = "Finished";
+    int final_result = counter + 10;
+}
+
+// 5. Nested Scopes and Shadowing
+{
+    const string SCOPE_NAME = "Inner";
+    int counter = 100; // Shadows global counter
+    {
+         int deep_val = 500;
+    }
+}

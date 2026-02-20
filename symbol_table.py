@@ -158,6 +158,10 @@ class SymbolTable:
         symbol = self.lookup(name)
         if symbol is None:
             return False
+            
+        # Constant enforcement
+        if symbol.constant and ('value' in kwargs or 'initialized' in kwargs):
+            return False
         
         # Update attributes
         if 'value' in kwargs:

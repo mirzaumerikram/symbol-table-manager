@@ -140,14 +140,21 @@ class Parser:
         """
         Parse a variable declaration.
         
-        Grammar: type IDENTIFIER (= expression)? ;
+        Grammar: (const)? type IDENTIFIER (= expression)? ;
         
         Returns:
             True if successfully parsed, False otherwise
         """
+        is_constant = False
+        if self.expect(TokenType.KEYWORD, 'const'):
+            is_constant = True
+            self.advance()
+            
         # Get type
         var_type = self.parse_type()
         if not var_type:
+            if is_constant:
+                self.error("Expected type after 'const'")
             return False
         
         # Get identifier
@@ -159,6 +166,23 @@ class Parser:
         line_number = self.current_token.line_number
         self.advance()
         
+        # Check for array declaration
+        is_array = False
+        array_size = 0
+        if self.expect(TokenType.DELIMITER, '['):
+            is_array = True
+            self.advance() # Skip '['
+            if self.expect(TokenType.NUMBER):
+                array_size = int(self.current_token.value)
+                self.advance() # Skip number
+            else:
+                self.error("Expected array size")
+                
+            if not self.expect(TokenType.DELIMITER, ']'):
+                self.error("Expected ']' after array size")
+            else:
+                self.advance() # Skip ']'
+        
         # Check for initialization
         value = None
         initialized = False
@@ -166,7 +190,19 @@ class Parser:
         if self.expect(TokenType.OPERATOR, '='):
             self.advance()  # Skip '='
             value = self.parse_expression()
+            
+            # Type checking
+            if value:
+                val_type = self._infer_type(value)
+                if val_type and val_type != var_type:
+                    # Allow float to store int
+                    if not (var_type == 'float' and val_type == 'int'):
+                        self.error(f"Type mismatch: cannot assign {val_type} to {var_type} variable '{var_name}'")
+            
             initialized = True
+        elif is_constant:
+             self.error(f"Constant '{var_name}' must be initialized")
+             return False
         
         # Expect semicolon
         if not self.expect(TokenType.DELIMITER, ';'):
@@ -176,7 +212,10 @@ class Parser:
         self.advance()  # Skip ';'
         
         # Insert into symbol table
-        if not self.symbol_table.insert(var_name, var_type, line_number, value=value, initialized=initialized):
+        attributes = {'is_array': is_array, 'array_size': array_size} if is_array else {}
+        if not self.symbol_table.insert(var_name, var_type, line_number, 
+                                        value=value, initialized=initialized, 
+                                        constant=is_constant, attributes=attributes):
             self.error(f"Duplicate declaration of variable '{var_name}'")
             return False
         
@@ -211,6 +250,15 @@ class Parser:
         # Parse expression
         value = self.parse_expression()
         
+        # Type checking
+        if value:
+            val_type = self._infer_type(value)
+            var_type = symbol.symbol_type
+            if val_type and val_type != var_type:
+                # Allow float to store int
+                if not (var_type == 'float' and val_type == 'int'):
+                    self.error(f"Type mismatch: cannot assign {val_type} to {var_type} variable '{var_name}'")
+        
         # Expect semicolon
         if not self.expect(TokenType.DELIMITER, ';'):
             self.error(f"Expected ';' after assignment")
@@ -219,10 +267,40 @@ class Parser:
         self.advance()  # Skip ';'
         
         # Update symbol table
-        self.symbol_table.update(var_name, value=value, initialized=True)
+        if not self.symbol_table.update(var_name, value=value, initialized=True):
+            self.error(f"Cannot reassign constant variable '{var_name}'")
+            return False
         
         return True
     
+    def _infer_type(self, value_str: str) -> Optional[str]:
+        """Infer the data type of a value string."""
+        value_str = value_str.strip()
+        
+        # Boolean
+        if value_str.lower() in ['true', 'false']:
+            return 'bool'
+            
+        # String (starts and ends with quotes)
+        if (value_str.startswith('"') and value_str.endswith('"')) or \
+           (value_str.startswith("'") and value_str.endswith("'")):
+            return 'string'
+            
+        # Number (check if it exists as int or float)
+        try:
+            if '.' in value_str:
+                float(value_str)
+                return 'float'
+            else:
+                int(value_str)
+                return 'int'
+        except ValueError:
+            # Check if it might be another variable (lookup in symbol table)
+            symbol = self.symbol_table.lookup(value_str)
+            if symbol:
+                return symbol.symbol_type
+            return None
+            
     def parse_block(self) -> bool:
         """
         Parse a block statement (scope).
@@ -273,6 +351,14 @@ class Parser:
         # Block
         if self.expect(TokenType.DELIMITER, '{'):
             return self.parse_block()
+            
+        # If Statement
+        if self.expect(TokenType.KEYWORD, 'if'):
+            return self.parse_if()
+            
+        # While Statement
+        if self.expect(TokenType.KEYWORD, 'while'):
+            return self.parse_while()
         
         # Assignment (starts with identifier)
         if self.expect(TokenType.IDENTIFIER):
@@ -282,6 +368,48 @@ class Parser:
         self.advance()
         return False
     
+    def parse_if(self) -> bool:
+        """Parse an if statement."""
+        self.advance() # Skip 'if'
+        
+        # Parse condition
+        if not self.expect(TokenType.DELIMITER, '('):
+            self.error("Expected '(' after 'if'")
+            return False
+        
+        self.advance() # Skip '('
+        self.parse_expression() # Parse condition
+        
+        if not self.expect(TokenType.DELIMITER, ')'):
+            self.error("Expected ')' after condition")
+            return False
+            
+        self.advance() # Skip ')'
+        
+        # Parse block with new scope
+        return self.parse_block()
+        
+    def parse_while(self) -> bool:
+        """Parse a while statement."""
+        self.advance() # Skip 'while'
+        
+        # Parse condition
+        if not self.expect(TokenType.DELIMITER, '('):
+            self.error("Expected '(' after 'while'")
+            return False
+            
+        self.advance() # Skip '('
+        self.parse_expression() # Parse condition
+        
+        if not self.expect(TokenType.DELIMITER, ')'):
+            self.error("Expected ')' after condition")
+            return False
+            
+        self.advance() # Skip ')'
+        
+        # Parse block with new scope
+        return self.parse_block()
+        
     def parse(self) -> SymbolTable:
         """
         Parse the entire program.

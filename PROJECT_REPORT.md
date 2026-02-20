@@ -40,8 +40,11 @@ Our mini compiler demonstrates:
 - Complete symbol table implementation with CRUD operations
 - Lexical analysis (tokenization)
 - Syntax analysis (parsing)
-- Semantic analysis (error detection)
-- Scope management with nesting support
+- Semantic Analysis Upgrade (A+):
+    - **Constant Enforcement**: Support for `const` keyword to prevent reassignment.
+    - **Advanced Type Checking**: Mismatch detection for `int`, `float`, `string`, `bool`.
+    - **Metadata Handling**: Array size and type tracking.
+- Scope management with nesting and control flow support (`if`/`while`).
 
 ---
 
@@ -152,11 +155,17 @@ Output: [KEYWORD(int), IDENTIFIER(x), OPERATOR(=), NUMBER(10), DELIMITER(;)]
 ```
 program        → statement_list
 statement_list → statement*
-statement      → declaration | assignment | block
-declaration    → type IDENTIFIER (= expression)? ;
+statement      → declaration | assignment | block | if_stmt | while_stmt
+declaration    → (const)? type IDENTIFIER (= expression)? ;
+               | type IDENTIFIER [ NUMBER ] ;
 assignment     → IDENTIFIER = expression ;
 block          → { statement_list }
+if_stmt        → if ( expression ) block
+while_stmt     → while ( expression ) block
 type           → int | float | string | bool
+expression     → term ((+ | -) term)*
+term           → factor ((* | /) factor)*
+factor         → NUMBER | STRING | IDENTIFIER | ( expression )
 ```
 
 **Semantic Checks:**
@@ -610,11 +619,12 @@ Errors: 0
 ### Key Features
 
 1. **Efficient Data Structure** - O(1) average lookup time
-2. **Hierarchical Scopes** - Support for unlimited nesting
+2. **Hierarchical Scopes** - Support for unlimited nesting and control flow
 3. **Variable Shadowing** - Proper scope resolution
-4. **Error Detection** - Meaningful error messages
-5. **Statistics Tracking** - Compilation metrics
-6. **Extensible Design** - Easy to add new features
+4. **Error Detection** - Advanced semantic checks (Duplicates, Undeclared, Type Mismatches, Constants)
+5. **Array Tracking** - Metadata management for static arrays
+6. **Statistics Tracking** - Compilation metrics
+7. **Extensible Design** - Easy to add new features
 
 ### Future Enhancements
 
